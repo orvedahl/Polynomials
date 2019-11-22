@@ -1,0 +1,215 @@
+
+Local install:
+	cd ${PolynomialsDir}
+	pip install -e --user .
+
+	The "-e" is for editable mode, this should place a link under the site-packages
+	folder so that development can happen all the time without recompiling/rebuilding
+
+The __init__.py uses the "from .functions import *" stuff
+
+	This allows you to do:
+		import polynomials
+		...
+		polynomials.some_function()
+
+	instead of having to do:
+		import polynomials
+		...
+		polynomials.functions.some_function()
+
+	which is to say, all functions in the functions.py module have been made
+	accessible from within the shorter/simpler polynomials import
+
+According to PEP8:
+
+	python package "yapf" will check your code against PEP8
+		pip install yapf
+		yapf -i some_module.py
+
+	function names should be lowercase and separated by underscores as necessary
+
+	variables names should be descriptive
+
+	there should be whitespace surrounding the standard operations, ==, !=, =, <=, etc.
+
+		good: x = 2.0
+		 bad: x=2.0
+
+	docstrings should look like the following:
+
+		def some_function(distance):
+		    """
+		    one line description without using function name
+
+		    a longer description to clarify functionality, not implementation
+
+		    Args
+		    ----
+		    distance : variable_type
+		        some description of what this thing is
+
+		    Returns
+		    -------
+		    out : variable_type
+		        some description
+
+		    Examples
+		    --------
+		    >>> d = np.array([0, 0, 0])
+		    >>> some_function(d)
+		    0.1
+		    """
+
+Testing using pytest
+
+	looks for directories and files that start with "test" or "test_", then executes
+	anything inside those files that starts with "test_"
+
+	pip install --user -U pytest pytest-cov
+
+	run "pytest -v" from the main directory
+
+	mainly see the "assert x == y" constructs here
+
+	if you want to raise a particular exception, such as input must be np.array:
+
+		import pytest
+		...
+		def test():
+		    x = [0,0,0]
+		    y = [1,0,0]
+		    with pytest.raises(TypeError):   # or whatever exception you expect
+		        func_to_test(x, y)           # call the routine to be tested
+
+		in this case, the test will pass if a TypeError is raised by func_to_test()
+		and it should fail otherwise
+
+	tests should be relatively simple, with a yes/no result. for matrix operations
+	or nd-array operations, make them small, e.g., shape = (3,2,4) or even shape = (3,2)
+
+		-choose a tolerance and compute L2 norms to get yes/no result
+
+	tests should not depend on outside functions if at all possible. this usually
+	translates to hard coding tolerances, making up fake data, writing a file such
+	that you can test reading said file (then deleting the files), etc.
+
+	be sure to test edge cases and corner cases along with internal points, as
+	boundaries tend to give the most issues
+
+	fixtures:
+		-a thing that tests can use repeatedly, like a global variable
+		-will need to import pytest and use the @pytest.fixture decorator
+			example:
+				@pytest.fixture
+				def methane_molecule():
+				    symbols = np.array(['C', 'H', 'H', 'H', 'H'])
+				    coords = np.array([[1,1,1], [2.4,1,1], [-0.4,1,1],
+				                       [1,1,2.4], [1,1,-0.4]]])
+				return coords, symbols
+
+			and use this fixture as:
+
+				def test_molecular_mass(methane_molecule):
+				    coords, symbols = methane_molecule
+				    ...
+				    assert x == y
+
+			multiple fixtures can be used by tests
+
+		-fixtures can be shared amongst different test files using a conftest.py
+
+	pytest.mark.parametrize decorator:
+
+		-allows you to test the function with multiple input values
+		-the decorator has syntax:
+			@pytest.mark.parametrize("x1,x2,...,xN, expected",
+			                      [(x1_val, x2_val, ..., xN_val, expected_val),
+			                       (x1_val, x2_val, ..., xN_val, expected_val),
+			                       (x1_val, x2_val, ..., xN_val, expected_val),
+			                      ]
+			def test_stuff(x1, x2, ..., xN, expected):
+				assert answer == expected
+
+			each element in the list of the second argument is a test case
+
+		-for example:
+			@pytest.mark.parametrize("theta_deg, sinth",
+                                         [(30, 0.5), (45, np.sqrt(2)/2), (60, np.sqrt(3)/2)]
+			def test_sinth(theta_deg, sinth):
+			    sth = np.sin(np.pi*theta_deg/180)
+			    assert sth == sinth
+
+			this should run three separate test cases
+
+	testing docstring "Example" code:
+
+		simply add the --doctest-modules option:
+			pytest -v --doctest-modules module_name
+
+Code coverage (related to pytest-ing)
+
+	pytest --cov=module_name
+
+	this will count how much of the package is "covered" by the tests
+
+	100% coverage is unrealistic, this is just a statistic that tells you how
+	comprehensive your testing is
+
+Continuous integration
+
+	Travis-CI is pretty much a server in the cloud, on which your code is
+	installed/built/tested
+
+	the steps include
+		-tell Travis what OS to run on & what versions of python to use
+		-tell Travis how to build the python environment
+		-tell Travis what python dependencies your code/test suite has
+		-build and install the code
+		-run pytest, or a benchmark if you have one, or both
+
+Docs using Sphinx
+
+	in the docs/ folder under the main project directory
+
+	the rst files are the actual meat that make up the documentation
+
+	to build the html docs:
+		make html
+
+	to view the html docs:
+		firefox _build/html/index
+
+	make clean will clean up the docs
+
+	build a pdf:
+		make latexpdf
+
+	host your documentation on Read The Docs: go to readthedocs.org and log in with
+	your GitHub credentials and link the repo. The docs will be automatically updated
+	everytime a new push occurs.
+
+	including the docstring documentation on read the docs takes some doing and
+	a configuration file:
+		cd docs/
+		cp ../devtools/conda-envs/test_env.yaml doc_env.yaml
+			edit the file to include packages needed to install/use code
+		cd ..
+		touch .readthedocs.yml
+			edit the file to include:
+				# .readthedocs.yml
+
+				version: 2
+
+				build:
+				  image: latest
+
+				python:
+				  version: 3.7
+				  install:
+				    - method: pip
+  				    path: .
+
+				conda:
+				  environment: docs/doc_env.yaml
+
