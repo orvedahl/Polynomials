@@ -1,7 +1,29 @@
 
+To start:
+
+	pip3 install --user cookiecutter
+
+	probably also need pytest:
+		dnf install python3-pytest python3-pytest-cov
+
+	then:
+		cookiecutter gh:molssi/cookiecutter-cms
+
+	make a repo on github, but don't add readme or anything
+
+	now connect the two:
+
+		git remote add origin https://...url..to..repo...
+
+	first add/commit/push:
+
+		git push -u origin master
+
 Local install:
+
 	cd ${PolynomialsDir}
 	pip install -e --user .
+		notice the trailing "." to indicate "I want to build the local dir"
 
 	The "-e" is for editable mode, this should place a link under the site-packages
 	folder so that development can happen all the time without recompiling/rebuilding
@@ -31,7 +53,7 @@ According to PEP8:
 
 	variables names should be descriptive
 
-	there should be whitespace surrounding the standard operations, ==, !=, =, <=, etc.
+	should be whitespace surrounding the standard operations, ==, !=, =, <=, etc.
 
 		good: x = 2.0
 		 bad: x=2.0
@@ -82,13 +104,14 @@ Testing using pytest
 		    with pytest.raises(TypeError):   # or whatever exception you expect
 		        func_to_test(x, y)           # call the routine to be tested
 
-		in this case, the test will pass if a TypeError is raised by func_to_test()
+		in this case, test will pass if a TypeError is raised by func_to_test()
 		and it should fail otherwise
 
 	tests should be relatively simple, with a yes/no result. for matrix operations
-	or nd-array operations, make them small, e.g., shape = (3,2,4) or even shape = (3,2)
+	or nd-array operations, make it small, e.g., shape = (3,2,4) or shape = (3,2)
 
 		-choose a tolerance and compute L2 norms to get yes/no result
+		-np.allclose or better yet: np.all(np.abs(A-B)<tol)
 
 	tests should not depend on outside functions if at all possible. this usually
 	translates to hard coding tolerances, making up fake data, writing a file such
@@ -124,10 +147,10 @@ Testing using pytest
 		-allows you to test the function with multiple input values
 		-the decorator has syntax:
 			@pytest.mark.parametrize("x1,x2,...,xN, expected",
-			                      [(x1_val, x2_val, ..., xN_val, expected_val),
-			                       (x1_val, x2_val, ..., xN_val, expected_val),
-			                       (x1_val, x2_val, ..., xN_val, expected_val),
-			                      ]
+			                   [(x1_val, x2_val, ..., xN_val, expected_val),
+			                    (x1_val, x2_val, ..., xN_val, expected_val),
+			                    (x1_val, x2_val, ..., xN_val, expected_val),
+			                   ]
 			def test_stuff(x1, x2, ..., xN, expected):
 				assert answer == expected
 
@@ -135,7 +158,7 @@ Testing using pytest
 
 		-for example:
 			@pytest.mark.parametrize("theta_deg, sinth",
-                                         [(30, 0.5), (45, np.sqrt(2)/2), (60, np.sqrt(3)/2)]
+                                      [(30, 0.5), (45, np.sqrt(2)/2), (60, np.sqrt(3)/2)]
 			def test_sinth(theta_deg, sinth):
 			    sth = np.sin(np.pi*theta_deg/180)
 			    assert sth == sinth
